@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body {
+            /* display: flex; */
+            /* flex-direction: column; */
+            /* align-items: center; */
+            height: 100vh;
+        }
+        body > * {
+            /* flex-grow: 1; */
+        }
+        .canvas-wrapper {
+            width: 499px;
+            height: 499px;
+            border: 1px solid black;
+            margin: auto;
+        }
+        #uploadForm {
+            margin: auto;
+            text-align: center;
+        }
+
+        ul.menu {
+            position: absolute;
+            top: 0;
+            right:0;
+            list-style-type: none;
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="canvas-wrapper">
+        <canvas id="my-canvas"></canvas>
+    </div>
+   
+
+    <form id="uploadForm">
+        <input type="file" id="fileInput" accept="image/*">
+        <button type="submit">Upload Image</button>
+    </form>
+    <ul class="menu">
+        <li>
+            <button id="download">Save image</button>
+        </li>
+        <li>
+            <button onclick='canvas.clear()'>Clear</button>
+        </li>
+        <li>
+            <button class="enableDraw" onclick='enableDraw()'>Pencil</button>
+        </li>
+        <li>
+            <button class="disableDraw" onclick='disableDraw()'>Mouse</button>
+        </li>
+        <li>
+            <button class="removeObject" onclick='deleteBtnHandler()'>Remove</button>
+        </li>
+    </ul>
+    
+    <script src="https://cdn.jsdelivr.net/npm/fabric"></script>
+    <script>
+        clickedButtonClass = ".enableDraw";
+        $(".enableDraw").css(
+            {"background-color":"pink"}
+        );
+        //Initialize canvas
+        const canvas = new fabric.Canvas('my-canvas');
+        const wrapper = document.querySelector("html");
+        wrapper.addEventListener("keyup", deleteHandler, false);
+        canvas.isDrawingMode = true;
+        const rect = new fabric.Rect({
+            top: 100,
+            left: 100,
+            width: 60,
+            height: 70,
+            fill: 'red'
+        });
+        window.addEventListener('resize', resizeCanvas, false);
+
+        function resizeCanvas() {
+            const wrapper = document.querySelector(".canvas-wrapper");
+            canvas.setHeight(wrapper.offsetHeight);
+            canvas.setWidth(wrapper.offsetWidth);
+
+        }
+
+        // resize on init
+        resizeCanvas();
+        const imgUrl = 'http://pngimg.com/uploads/dog/dog_PNG50317.png';
+        /*
+        fabric.Image.fromURL(imgUrl, function(oImg) {
+            // scale image down, and flip it, before adding it onto canvas
+            oImg.scale(0.1).set('flipX', true);
+            canvas.add(oImg);
+        });
+        */
+
+        canvas.add(rect);
+
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadForm.addEventListener('submit', submitHandler);
+        var imageSaver = document.getElementById('download');
+        imageSaver.addEventListener('click', saveImage, false);
+
+
+        function saveImage(e) {
+            // e.preventDefault();
+            // console.log("aaa");
+            // this.href = canvas.toDataURL({
+            //     format: 'png',
+            //     quality: 0.8
+            // });
+            // this.download = 'canvas.png'
+            e.preventDefault();
+            console.log("aaa");
+            const dataURL = canvas.toDataURL({
+                format: 'png',
+                quality: 0.8
+            });
+
+            // Create a temporary anchor element
+            const anchor = document.createElement('a');
+            anchor.href = dataURL;
+            anchor.download = 'canvas.png';
+            
+            // Programmatically click the anchor element to trigger the download
+            anchor.click();
+        }
+
+
+        function submitHandler(event) {
+            event.preventDefault();
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const imgUrl = e.target.result;
+                    
+                    fabric.Image.fromURL(imgUrl, function(oImg) {
+                        // scale image down, and flip it, before adding it onto canvas
+                        //oImg.scale(0.1);
+
+                        canvas.add(oImg);
+                    });
+                };
+
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function deleteBtnHandler() {
+            if (canvas.getActiveObject()) {
+                canvas.remove(canvas.getActiveObject());
+            }
+        }
+
+        function deleteHandler(e) {
+            console.log(e.keyCode);
+            if (e.key == 'Backspace' || e.code == 'Backspace' || e.keyCode == 8) {
+                if (canvas.getActiveObject()) {
+                    // if (canvas.getActiveObject().isEditting) {
+                    //     return;
+                    // }
+                    canvas.remove(canvas.getActiveObject());
+                }
+
+            }
+        }
+
+        function enableDraw() {
+            $(clickedButtonClass).css(
+                {"background-color":"rgb(239, 239, 239)"}
+            );
+            $(".enableDraw").css(
+                {"background-color":"pink"}
+            );
+            
+            canvas.isDrawingMode = true;
+            clickedButtonClass = ".enableDraw";
+        }
+        function disableDraw() {
+            $(clickedButtonClass).css(
+                {"background-color":"rgb(239, 239, 239)"}
+            );
+            $(".disableDraw").css(
+                {"background-color":"pink"}
+            );
+            clickedButtonClass = ".disableDraw";    
+            canvas.isDrawingMode = false;
+        }
+
+        
+
+    
+    </script>
+</body>
+</html>
