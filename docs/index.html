@@ -5,74 +5,130 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+   
     <style>
         body {
-            /* display: flex; */
-            /* flex-direction: column; */
-            /* align-items: center; */
             height: 100vh;
+            margin: 0;
         }
-        body > * {
-            /* flex-grow: 1; */
-        }
+        
         .canvas-wrapper {
-            width: 499px;
-            height: 499px;
-            border: 1px solid black;
-            margin: auto;
-        }
-        #uploadForm {
-            margin: auto;
-            text-align: center;
+            position: relative;
         }
 
+        .container-io {
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+        }
+
+        .container-io > #download {
+            padding: 10px;
+        }
+
+        #uploadForm {
+            text-align: center;
+            border: 1px solid black;
+            border-radius: 6px;
+        }
+        
+        #uploadForm > * {
+            margin: 10px;
+        }
+
+        button {
+            border-radius: 2.5px;
+            border-width: 1px;
+        }
+
+        
+
         ul.menu {
+            margin-top: 10px;
             position: absolute;
             top: 0;
             right:0;
             list-style-type: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            
         }
+
+        ul > li {
+            overflow: clip;
+        }
+
+        li > input {
+            width: 50px;
+        }
+
     
     </style>
 </head>
 <body>
+    
     <div class="canvas-wrapper">
         <canvas id="my-canvas"></canvas>
     </div>
-   
+    
+    <div class="container-io">
+        <form id="uploadForm">
+            <input type="file" id="fileInput" accept="image/*">
+            <button type="submit">Upload Image</button>
+        </form>
+        <button id="download">Save image <i class="fa-solid fa-download" style="color:rgb(214, 44, 38)"></i></button>
+    </div>
 
-    <form id="uploadForm">
-        <input type="file" id="fileInput" accept="image/*">
-        <button type="submit">Upload Image</button>
-    </form>
-    <ul class="menu">
+    <ul class="menu"> 
         <li>
-            <button id="download">Save image</button>
+            <button class="enableDraw" onclick="enableDraw()">Pencil</button>
         </li>
         <li>
-            <button onclick='canvas.clear()'>Clear</button>
-        </li>
-        <li>
-            <button class="enableDraw" onclick='enableDraw()'>Pencil</button>
-        </li>
-        <li>
-            <button class="disableDraw" onclick='disableDraw()'>Mouse</button>
+            <button class="disableDraw" onclick="disableDraw()">Mouse</button>
         </li>
         <li>
             <button class="removeObject" onclick='deleteBtnHandler()'>Remove</button>
         </li>
+        <li>
+            <button onclick='canvas.clear()'>Clear</button>
+        </li>
+        <li id="canvas-size">
+            Size: 
+            <br>
+            <label for="width">Width</label>
+            <br>
+            <input type="number" id="Width" name="Width" value="1920">
+            <br>
+            <label for="height">Height</label>
+            <br>
+            <input type="number" id="Height" name="Height" value="1080">
+        </li>
+        <li>
+            <button onclick="resizeCanvas()">Resize</button>
+        </li>
     </ul>
     
+
     <script src="https://cdn.jsdelivr.net/npm/fabric"></script>
+
     <script>
-        clickedButtonClass = ".enableDraw";
+        var wantedWidth = 0;
+        var wantedHeight = 0;
+        var scaleRatio;
+        var clickedButtonClass = ".enableDraw";
+
         $(".enableDraw").css(
             {"background-color":"pink"}
-        );
+        )
+
         //Initialize canvas
         const canvas = new fabric.Canvas('my-canvas');
+        resizeCanvas();
         const wrapper = document.querySelector("html");
         wrapper.addEventListener("keyup", deleteHandler, false);
+        window.addEventListener("resize", resizeCanvas, false);
         canvas.isDrawingMode = true;
         const rect = new fabric.Rect({
             top: 100,
@@ -81,26 +137,7 @@
             height: 70,
             fill: 'red'
         });
-        window.addEventListener('resize', resizeCanvas, false);
-
-        function resizeCanvas() {
-            const wrapper = document.querySelector(".canvas-wrapper");
-            canvas.setHeight(wrapper.offsetHeight);
-            canvas.setWidth(wrapper.offsetWidth);
-
-        }
-
-        // resize on init
-        resizeCanvas();
-        const imgUrl = 'http://pngimg.com/uploads/dog/dog_PNG50317.png';
-        /*
-        fabric.Image.fromURL(imgUrl, function(oImg) {
-            // scale image down, and flip it, before adding it onto canvas
-            oImg.scale(0.1).set('flipX', true);
-            canvas.add(oImg);
-        });
-        */
-
+    
         canvas.add(rect);
 
         const uploadForm = document.getElementById('uploadForm');
@@ -110,17 +147,60 @@
         var imageSaver = document.getElementById('download');
         imageSaver.addEventListener('click', saveImage, false);
 
+        // Call the load function when the page loads to restore the canvas state
+        loadCanvasFromLocalStorage();
 
+        setInterval(saveCanvasToLocalStorage, 1000);
+
+
+        
+
+        function getCanvasSize() {
+            wantedWidth = parseInt($("input#Width").val());
+            wantedHeight = parseInt($("input#Height").val());
+        }
+
+        function resizeCanvas() {
+            getCanvasSize();
+            canvas.setWidth(wantedWidth);
+            canvas.setHeight(wantedHeight);
+        
+            if (wantedWidth > wantedHeight) {
+                scaleRatio = (window.innerWidth*0.85) / wantedWidth ;    
+            } else {
+                scaleRatio = (window.innerHeight*0.85) / wantedHeight ;
+            }
+
+            var offsetHeight = wantedHeight * (scaleRatio - 1);
+            var offsetWidth = wantedHeight * (scaleRatio - 1);
+            mLeft = "auto";
+            mRight = "auto";
+
+            if (wantedWidth > wantedHeight) {
+                mLeft = 0;
+                mRight = 0;
+            }
+
+            $(".canvas-container").css(
+                {
+                    "transform-origin": "top left",
+                    "transform": `scale(${scaleRatio}, ${scaleRatio})`,
+                    "border": "1px solid #BB411C",
+                    
+                    "margin-left": `${mLeft}`,
+                    "margin-right": `${mRight}`,
+                }
+            );
+
+            $(".container-io").css(
+                {
+                    "margin-top":`${offsetHeight + 20}px`
+                }
+            );
+        }
+        
         function saveImage(e) {
-            // e.preventDefault();
-            // console.log("aaa");
-            // this.href = canvas.toDataURL({
-            //     format: 'png',
-            //     quality: 0.8
-            // });
-            // this.download = 'canvas.png'
             e.preventDefault();
-            console.log("aaa");
             const dataURL = canvas.toDataURL({
                 format: 'png',
                 quality: 0.8
@@ -135,7 +215,6 @@
             anchor.click();
         }
 
-
         function submitHandler(event) {
             event.preventDefault();
             const file = fileInput.files[0];
@@ -147,9 +226,6 @@
                     const imgUrl = e.target.result;
                     
                     fabric.Image.fromURL(imgUrl, function(oImg) {
-                        // scale image down, and flip it, before adding it onto canvas
-                        //oImg.scale(0.1);
-
                         canvas.add(oImg);
                     });
                 };
@@ -165,12 +241,8 @@
         }
 
         function deleteHandler(e) {
-            console.log(e.keyCode);
             if (e.key == 'Backspace' || e.code == 'Backspace' || e.keyCode == 8) {
                 if (canvas.getActiveObject()) {
-                    // if (canvas.getActiveObject().isEditting) {
-                    //     return;
-                    // }
                     canvas.remove(canvas.getActiveObject());
                 }
 
@@ -179,7 +251,9 @@
 
         function enableDraw() {
             $(clickedButtonClass).css(
-                {"background-color":"rgb(239, 239, 239)"}
+                {
+                    "background-color":"rgb(239, 239, 239)",
+                }
             );
             $(".enableDraw").css(
                 {"background-color":"pink"}
@@ -198,6 +272,37 @@
             clickedButtonClass = ".disableDraw";    
             canvas.isDrawingMode = false;
         }
+
+        function saveCanvasToLocalStorage() {
+            // Serialize canvas state
+            var json = JSON.stringify(canvas.toJSON());
+            // Store serialized state in localStorage
+            localStorage.setItem('canvasState', json);
+            localStorage.setItem("width", wantedWidth);
+            localStorage.setItem("height", wantedHeight);
+        }
+
+        function loadCanvasFromLocalStorage() {
+            // Retrieve serialized state from localStorage
+            var json = localStorage.getItem('canvasState');
+            
+            if (json) {
+                // Load canvas state from serialized JSON
+                canvas.loadFromJSON(json, function() {
+                    // Render canvas after loading state
+                    canvas.renderAll();
+                });
+                wantedWidth = localStorage.getItem("width");
+                wantedHeight = localStorage.getItem("height");
+                $("input#Width").val(wantedWidth);
+                $("input#Height").val(wantedHeight);
+                resizeCanvas();
+            }
+            
+        }
+
+
+
 
         
 
