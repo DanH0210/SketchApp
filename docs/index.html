@@ -13,6 +13,10 @@
             margin: 0;
             background-color: rgba(0, 0, 0, 0.795); /*rgb(88, 88, 88);*/
         }
+
+        .large-wrapper {
+            position: relative;
+        }
         
         .canvas-wrapper {
             position: relative;
@@ -28,6 +32,7 @@
             display: flex;
             align-items: center;
             justify-content: space-evenly;
+            gap: 10px;
             
         }
 
@@ -106,48 +111,50 @@
     </style>
 </head>
 <body>
+    <div class="large-wrapper">
+        <div class="canvas-wrapper">
+            <canvas id="my-canvas"></canvas>
+        </div>
+        
+        <div class="container-io">
+            <form id="uploadForm">
+                <input type="file" id="fileInput" accept="image/*">
+                <button type="submit">Upload Image</button>
+            </form>
+            <button id="download" onclick="saveImage()">Save image <i class="fa-solid fa-download" style="color:rgb(214, 44, 38)"></i></button>
+        </div>
     
-    <div class="canvas-wrapper">
-        <canvas id="my-canvas"></canvas>
+        <ul class="menu"> 
+            <li>
+                <button class="enableDraw" onclick="enableDraw()">Pencil</button>
+            </li>
+            <li>
+                <button class="disableDraw" onclick="disableDraw()">Mouse</button>
+            </li>
+            <li>
+                <button class="removeObject" onclick='deleteBtnHandler()'>Remove</button>
+            </li>
+            <li>
+                <button onclick='canvas.clear()'>Clear</button>
+            </li>
+            <li id="canvas-size">
+                <span style="font-size: 25px; font-weight: bolds; text-decoration: underline; color:rgb(201, 131, 45)">Size:</span>
+                <br>
+              
+                <label for="width">Width</label>
+                <br>
+                <input type="number" id="Width" name="Width" value="1920">
+                <br>
+                <label for="height">Height</label>
+                <br>
+                <input type="number" id="Height" name="Height" value="1080">
+            </li>
+            <li>
+                <button onclick="resizeCanvas()">Resize</button>
+            </li>
+        </ul>
     </div>
     
-    <div class="container-io">
-        <form id="uploadForm">
-            <input type="file" id="fileInput" accept="image/*">
-            <button type="submit">Upload Image</button>
-        </form>
-        <button id="download" onclick="saveImage()">Save image <i class="fa-solid fa-download" style="color:rgb(214, 44, 38)"></i></button>
-    </div>
-
-    <ul class="menu"> 
-        <li>
-            <button class="enableDraw" onclick="enableDraw()">Pencil</button>
-        </li>
-        <li>
-            <button class="disableDraw" onclick="disableDraw()">Mouse</button>
-        </li>
-        <li>
-            <button class="removeObject" onclick='deleteBtnHandler()'>Remove</button>
-        </li>
-        <li>
-            <button onclick='canvas.clear()'>Clear</button>
-        </li>
-        <li id="canvas-size">
-            <span style="font-size: 25px; font-weight: bolds; text-decoration: underline; color:rgb(201, 131, 45)">Size:</span>
-            <br>
-          
-            <label for="width">Width</label>
-            <br>
-            <input type="number" id="Width" name="Width" value="1920">
-            <br>
-            <label for="height">Height</label>
-            <br>
-            <input type="number" id="Height" name="Height" value="1080">
-        </li>
-        <li>
-            <button onclick="resizeCanvas()">Resize</button>
-        </li>
-    </ul>
     
 
     <script src="https://cdn.jsdelivr.net/npm/fabric"></script>
@@ -205,34 +212,36 @@
             getCanvasSize();
             canvas.setWidth(wantedWidth);
             canvas.setHeight(wantedHeight);
-        
-            if (wantedWidth > wantedHeight && wantedWidth < window.innerWidth) {
-                scaleRatio = (window.innerWidth*0.85) / wantedWidth ;    
-            } else if (wantedWidth > wantedHeight && wantedWidth > window.innerWidth) {
-                scaleRatio = (window.innerHeight*0.85) / wantedHeight ;   
+            if (wantedWidth > wantedHeight) {
+                scaleRatio = (window.innerWidth-100) / wantedWidth;
+                if ((wantedHeight * scaleRatio) > window.innerHeight - 100) {
+                    scaleRatio = (window.innerHeight-100) / wantedHeight ;  
+                }
             } else {
-                scaleRatio = (window.innerHeight*0.85) / wantedHeight ; 
+                scaleRatio = (window.innerHeight*0.85) / wantedHeight;
+                if ((wantedWidth * scaleRatio) > window.innerWidth - 100) {
+                    scaleRatio = (window.innerWidth-100) / wantedWidth;
+                } 
             }
+
+            var marginLeft = (window.innerWidth-100 - wantedWidth*scaleRatio) / 2;
+            var marginTop = (window.innerHeight-100 - wantedHeight * scaleRatio) / 2; 
 
             var offsetHeight = wantedHeight * (scaleRatio - 1);
-            var offsetWidth = wantedHeight * (scaleRatio - 1);
-            mLeft = "auto";
-            mRight = "auto";
+            //var offsetWidth = wantedHeight * (scaleRatio - 1);
 
-            if (wantedWidth > wantedHeight) {
-                mLeft = 0;
-                mRight = 0;
-            }
 
             $(".canvas-container").css(
                 {
                     "transform-origin": "top left",
                     "transform": `scale(${scaleRatio}, ${scaleRatio})`,
-                    //"border": "1px solid #BB411C",
+                    "margin-left": `${marginLeft}px`,
                     
-                    "margin-left": `${mLeft}`,
-                    "margin-right": `${mRight}`,
                 }
+            );
+
+            $(".large-wrapper").css(
+                {"margin-top" : `${marginTop}px`}
             );
 
             $(".container-io").css(
